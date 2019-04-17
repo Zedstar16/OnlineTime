@@ -17,3 +17,6 @@ permissions:
  reset.onlinetime:
   default: op
   description: "reset"
+ onlinetime:
+  default: true
+  description: "ot"
