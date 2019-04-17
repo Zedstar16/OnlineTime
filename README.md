@@ -8,7 +8,8 @@ The plugin will measure online times as soon as it is added to the server
 # Commands:
 - /ot total [player]  (Get the total online time of yourself or another player)
 - /ot session [player] (Get the current session duration of yourself or another player)
-- /ot top [page] (Get the list of top most active players_
+- /ot top [page] (Get the list of top most active players
+- /ot reset all (OPs only, reset all online time data)
 - /ot info (Displays version and credits)
 
 # TODO
