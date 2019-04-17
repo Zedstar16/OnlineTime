@@ -43,13 +43,12 @@ class Main extends PluginBase implements Listener {
 	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool
     {
         if ($command->getName() == "onlinetime") {
-           // if (!$sender instanceof Player && !isset($args[1]) && isset($args[0]) && strtolower($args[0]) !== "top") {
-           //     $sender->sendMessage("You can only get the online time of other players, not yourself");
-            //    return false;
-           // }
-
+            if (!$sender instanceof Player && !isset($args[1]) && strtolower($args[0]) == "session") {
+                $sender->sendMessage("You can only get the online time of other players, not yourself");
+             return false;
+            }
+            $h=base64_decode("wqdkPS09LT3Cp2FPbmxpbmXCp2JUaW1lIEhlbHDCp2Q9LT0tPQrCp2Ivb3QgdG9wIFtwYWdlXSAgwqdhVmlldyB0aGUgdG9wIG1vc3QgYWN0aXZlIHBsYXllcnMKwqdiL290IHRvdGFsIFtwbGF5ZXJdICDCp2FWaWV3IGhvdyBsb25nIHlvdSBvciB0aGUgcGxheWVyIHlvdSBzZWxlY3RlZCBoYXZlIHNwZW50IG9ubGluZSBpbiB0b3RhbArCp2Ivb3Qgc2Vzc2lvbiBbcGxheWVyXSAgwqdhVmlldyBob3cgbG9uZyB5b3Ugb3IgdGhlIHBsYXllciB5b3Ugc2VsZWN0ZWQgaGF2ZSBzcGVudCBvbmxpbmUKwqdiL290IGluZm8gIMKnYVZpZXcgcGx1Z2luIHZlcnNpb24gYW5kIGNyZWRpdHMKCSAgICA=");
             if (isset($args[0])) {
-                $h=base64_decode("wqdkPS09LT3Cp2FPbmxpbmXCp2JUaW1lIEhlbHDCp2Q9LT0tPQrCp2Ivb3QgdG9wIFtwYWdlXSAgwqdhVmlldyB0aGUgdG9wIG1vc3QgYWN0aXZlIHBsYXllcnMKwqdiL290IHRvdGFsIFtwbGF5ZXJdICDCp2FWaWV3IGhvdyBsb25nIHlvdSBvciB0aGUgcGxheWVyIHlvdSBzZWxlY3RlZCBoYXZlIHNwZW50IG9ubGluZSBpbiB0b3RhbArCp2Ivb3Qgc2Vzc2lvbiBbcGxheWVyXSAgwqdhVmlldyBob3cgbG9uZyB5b3Ugb3IgdGhlIHBsYXllciB5b3Ugc2VsZWN0ZWQgaGF2ZSBzcGVudCBvbmxpbmUKwqdiL290IGluZm8gIMKnYVZpZXcgcGx1Z2luIHZlcnNpb24gYW5kIGNyZWRpdHMKCSAgICA=");
                 switch ($args[0]) {
                     case "total":
                         if (!isset($args[1])) {
@@ -118,13 +117,20 @@ class Main extends PluginBase implements Listener {
                         break;
                     default:
                         $sender->sendMessage($h);
+                        if($sender->isOp()){
+                            $sender->sendMessage("§b/ot reset all  §aReset All Online Time data");
+                        }
                         return true;
+                }
+            }else {
+                $sender->sendMessage($h);
+                if ($sender->isOp()) {
+                    $sender->sendMessage("§b/ot reset all  §aReset All Online Time data");
                 }
             }
         }
         return true;
     }
-
 
 	public function getTotalTime(String $pn): String {
         $pn = strtolower($pn);
