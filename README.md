@@ -1,6 +1,9 @@
 # OnlineTime
 Measure how long players are spending on your server!
 
+[![HitCount](http://hits.dwyl.io/Zedstar16/OnlineTime.svg)](http://hits.dwyl.io/Zedstar16/OnlineTime)
+
+
 The plugin will measure online times as soon as it is added to the server
 
 - Great for seeing player activity and finding the most active players on the server!
