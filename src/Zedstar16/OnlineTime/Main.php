@@ -85,7 +85,7 @@ class Main extends PluginBase implements Listener
                         } else if (isset($args[1])) {
                             if ($this->getServer()->getPlayer($args[1]) !== null) {
                                 $name = $this->getServer()->getPlayer($args[1])->getName();
-                                $time = explode(":", $this->getSessionTime($name);
+                                 $time = explode(":", $this->getSessionTime($name));
                                 $sender->sendMessage("§aThe current session time of $name is: §b" . $time[0] . "§9hrs §b" . $time[1] . "§9mins §b" . $time[2] . "§9secs");
                             } else {
                                 $sender->sendMessage("§c$args[1] is not online");
