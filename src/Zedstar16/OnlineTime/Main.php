@@ -4,38 +4,40 @@ declare(strict_types=1);
 
 namespace Zedstar16\OnlineTime;
 
-use pocketmine\entity\Entity;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
-use pocketmine\level\particle\FloatingTextParticle;
-use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
-use pocketmine\utils\Config;
+use Zedstar16\OnlineTime\database\SQLite;
 
 class Main extends PluginBase implements Listener {
 
     public static $times = [];
-    public $players;
+    /** @var SQLite */
+    public $db;
 
 	public function onEnable() : void{
-	    $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        $this->players = new Config($this->getDataFolder()."players.yml", Config::YAML);
+        $this->db = new SQLite($this);
+        $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
 
     public function onJoin(PlayerJoinEvent $event){
+	    if($this->db->hasTime($event->getPlayer()) === false){
+	        $this->db->registerTime($event->getPlayer());
+        }
 	    $pn = strtolower($event->getPlayer()->getName());
 	    self::$times[$pn] = time();
     }
 
     public function onQuit(PlayerQuitEvent $event){
         $player = strtolower($event->getPlayer()->getName());
+        $p = $event->getPlayer();
         if(isset(self::$times[$player])){
-            $old = $this->players->get($player);
-            $this->players->set($player, ($old + (time() - self::$times[$player])));
+            $old = $this->db->getRawTime($p);
+            $this->db->setRawTime($p, ($old + (time() - self::$times[$player])));
             unset(self::$times[$player]);
         }
     }
@@ -60,7 +62,7 @@ class Main extends PluginBase implements Listener {
                                 $time = explode(":", $this->getTotalTime($name));
                                 $sender->sendMessage("§aThe total online time of $name is: §b" .$time[0]."§9hrs §b".$time[1]."§9mins §b".$time[2]."§9secs");
                             } else {
-                                if ($this->players->exists($args[1])) {
+                                if ($this->db->hasTime($args[1])) {
                                     $time = explode(":", $this->getTotalTime($args[1]));
                                     $sender->sendMessage("§aThe total online time of $args[1] is: §b" .$time[0]."§9hrs §b".$time[1]."§9mins §b".$time[2]."§9secs");
                                 } else $sender->sendMessage("§cPlayer not found in database");
@@ -80,36 +82,44 @@ class Main extends PluginBase implements Listener {
                         }
                         break;
                     case "top":
-                        $page = 1;
-                        $data = $this->players->getAll();
+                        $sender->sendMessage( "§8(§eTOP WANTED PLAYERS§8)");
+                        $query = "SELECT username, time FROM players ORDER BY time;";
+                        $result = $this->db->getDatabase()->query($query);
+                        $place = 1;
+                        $data = [];
+                        while($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                            $data[$row["username"]] = $row["time"];
+                           $place++;
+                        }
                         arsort($data);
                         $i = 0;
                         $pagelength = 10;
                         $n = count($data);
                         $pages = round($n/$pagelength);
+                        $page = 1;
                         if(isset($args[1]) && is_numeric($args[1])){
                             if($args[1] > $n){
                                 $sender->sendMessage("§cPage number is too large, max page number: $n");
                                 return false;
                             }
                             $page = $args[1];
-                            }
+                        }
                         $sender->sendMessage("§bTop §aOnline §bTimes");
                         $sender->sendMessage("§6Displaying page §b".($page)."§6 out of §b$pages");
-                        foreach($data as $key => $val){
-                           $i++;
-                           if($i >= $pagelength*($page - 1) && $i <= (($pagelength*($page - 1)) + 10)){
-                               $time = explode(":", $this->getTotalTime($key));
-                               $sender->sendMessage("§l§4$i.  §a$key §b". $time[0]."§9hrs §b".$time[1]."§9mins §b".$time[2]."§9secs");
-                           }
+                        foreach($data as $key => $val) {
+                            $i++;
+                            if ($i >= $pagelength * ($page - 1) && $i <= (($pagelength * ($page - 1)) + 10)) {
+                                $time = explode(":", $this->getTotalTime($key));
+                                $sender->sendMessage("§l§4$i.  §a$key §b" . $time[0] . "§9hrs §b" . $time[1] . "§9mins §b" . $time[2] . "§9secs");
+                            }
                         }
-                        break;
+                    break;
+
                     case "reset":
                         if($sender->hasPermission("reset.onlinetime")){
                             if(isset($args[1])){
                                 if($args[1] == "all"){
-                                    unlink($this->getDataFolder()."players.yml");
-                                    $this->players->reload();
+                                    unlink($this->getDataFolder()."players.db");
                                     $sender->sendMessage("Reset All online times");
                                 }
                             }
@@ -132,9 +142,16 @@ class Main extends PluginBase implements Listener {
         return true;
     }
 
+    public function getDatabase(): SQLite {
+        return $this->db;
+    }
+
 	public function getTotalTime(String $pn): String {
         $pn = strtolower($pn);
-        $totalsecs = $this->players->get($pn);
+        if($this->getServer()->getPlayer($pn) !== null){
+            $p = $this->getServer()->getPlayer($pn);
+        } else $p = $pn;
+        $totalsecs = $this->db->getRawTime($p);
         if($this->getServer()->getPlayer($pn) !== null) {
             $t = (time() - self::$times[$pn]);
         }else $t = 0;
@@ -150,9 +167,11 @@ class Main extends PluginBase implements Listener {
 	public function onDisable() : void{
 		foreach(self::$times as $player => $time){
 		    $player = strtolower($player);
-		    $old = $this->players->get($player);
-		    $this->players->set($player, ($old + ( time() - self::$times[$player])));
-            $this->players->save();
+            if($this->getServer()->getPlayer($player) !== null){
+                $p = $this->getServer()->getPlayer($player);
+            } else $p = $player;
+            $old = $this->db->getRawTime($p);
+		    $this->db->setRawTime($p, ($old + ( time() - self::$times[$player])));
 		    unset(self::$times[$player]);
         }
 	}
