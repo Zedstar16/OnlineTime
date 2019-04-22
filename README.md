@@ -7,6 +7,7 @@ Measure how long players are spending on your server!
 The plugin will measure online times as soon as it is added to the server
 
 - Great for seeing player activity and finding the most active players on the server!
+- Addon support for [ScoreHud](https://poggit.pmmp.io/p/ScoreHud), get the Addon [here](https://github.com/JackMD/ScoreHud-Addons)
 
 # Commands:
 - /ot total [player]  (Get the total online time of yourself or another player)
