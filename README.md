@@ -2,10 +2,17 @@
 Measure how long players are spending on your server!
 
 [![HitCount](http://hits.dwyl.io/Zedstar16/OnlineTime.svg)](http://hits.dwyl.io/Zedstar16/OnlineTime)
+[![](https://poggit.pmmp.io/shield.dl.total/OnlineTime)](https://poggit.pmmp.io/p/OnlineTime)
+<a href="https://poggit.pmmp.io/p/OnlineTime"><img src="https://poggit.pmmp.io/shield.dl.total/OnlineTime"></a>
+[![](https://poggit.pmmp.io/shield.state/OnlineTime)](https://poggit.pmmp.io/p/OnlineTime)
+<a href="https://poggit.pmmp.io/p/OnlineTime"><img src="https://poggit.pmmp.io/shield.state/OnlineTime"></a>
+[![](https://poggit.pmmp.io/shield.api/OnlineTime)](https://poggit.pmmp.io/p/OnlineTime)
+<a href="https://poggit.pmmp.io/p/OnlineTime"><img src="https://poggit.pmmp.io/shield.api/OnlineTime"></a>
 
 
 The plugin will measure online times as soon as it is added to the server
 
+- Get a compiled .phar version [here](https://poggit.pmmp.io/p/OnlineTime/1.2)
 - Great for seeing player activity and finding the most active players on the server!
 - Addon support for [ScoreHud](https://poggit.pmmp.io/p/ScoreHud), get the Addon [here](https://github.com/JackMD/ScoreHud-Addons)
 
