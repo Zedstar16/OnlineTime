@@ -3,11 +3,8 @@ Measure how long players are spending on your server!
 
 [![HitCount](http://hits.dwyl.io/Zedstar16/OnlineTime.svg)](http://hits.dwyl.io/Zedstar16/OnlineTime)
 [![](https://poggit.pmmp.io/shield.dl.total/OnlineTime)](https://poggit.pmmp.io/p/OnlineTime)
-<a href="https://poggit.pmmp.io/p/OnlineTime"><img src="https://poggit.pmmp.io/shield.dl.total/OnlineTime"></a>
 [![](https://poggit.pmmp.io/shield.state/OnlineTime)](https://poggit.pmmp.io/p/OnlineTime)
-<a href="https://poggit.pmmp.io/p/OnlineTime"><img src="https://poggit.pmmp.io/shield.state/OnlineTime"></a>
 [![](https://poggit.pmmp.io/shield.api/OnlineTime)](https://poggit.pmmp.io/p/OnlineTime)
-<a href="https://poggit.pmmp.io/p/OnlineTime"><img src="https://poggit.pmmp.io/shield.api/OnlineTime"></a>
 
 
 The plugin will measure online times as soon as it is added to the server
