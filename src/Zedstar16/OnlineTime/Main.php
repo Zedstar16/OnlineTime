@@ -22,23 +22,7 @@ class Main extends PluginBase implements Listener
     public function onEnable(): void
     {
         $this->db = new SQLite($this);
-        $enc = base64_encode("§aOnline§bTime\n§dVersion: 1.1\n§cMade By: §aZedstar16, §bTwitter: §e@Zedstar1603");
-        $this->getLogger()->warning($enc);
-        $this->getLogger()->warning(base64_decode($enc));
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        /**
-         * $query = "SELECT username, time FROM players ORDER BY time;";
-         * $result = $this->db->getDatabase()->query($query);
-         * $data = [];
-         * while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-         * $data[$row["username"]] = $row["time"];
-         *
-         * }
-         * foreach($data as $key => $val){
-         * $name = strtolower($key);
-         * $this->db->setRawTime($name, $val);
-         * }
-         */
     }
 
     public function onJoin(PlayerJoinEvent $event)
