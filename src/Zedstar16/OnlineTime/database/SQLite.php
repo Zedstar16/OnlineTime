@@ -2,20 +2,17 @@
 
 namespace Zedstar16\OnlineTime\database;
 
-
 use pocketmine\Player;
 use pocketmine\plugin\PluginException;
 use Zedstar16\OnlineTime\Main;
 
-class SQLite {
-
+class SQLite
+{
     /**Credits to:
      * DavidGamingzz for the Sqlite Database class
      */
-
     /** @var Main */
     private $plugin;
-
     /** @var \SQLite3 */
     private $database;
 
@@ -24,7 +21,8 @@ class SQLite {
      *
      * @param Main $plugin
      */
-    public function __construct(Main $plugin) {
+    public function __construct(Main $plugin)
+    {
         $this->plugin = $plugin;
         $this->database = new \SQLite3($plugin->getDataFolder() . "players.db");
         $query = "CREATE TABLE IF NOT EXISTS players(uuid VARCHAR(36), username VARCHAR(16), time INT);";
@@ -44,8 +42,9 @@ class SQLite {
      *
      * @return int|null
      */
-    public function getRawTime($player): ?int {
-        if($player instanceof Player) {
+    public function getRawTime($player): ?int
+    {
+        if ($player instanceof Player) {
             $uuid = $player->getRawUniqueId();
             $query = "SELECT time FROM players WHERE uuid = :uuid";
             $stmt = $this->database->prepare($query);
@@ -53,10 +52,10 @@ class SQLite {
             $result = $stmt->execute();
             return $result->fetchArray(SQLITE3_ASSOC)["time"];
         }
-        if(is_string($player)) {
-            $query = "SELECT time FROM players WHERE username = :username";
+        if (is_string($player)) {
+            $query = "SELECT time FROM players WHERE username = :username COLLATE NOCASE";
             $stmt = $this->database->prepare($query);
-            $stmt->bindValue(":username", $player);
+            $stmt->bindValue(":username", strtolower($player));
             $result = $stmt->execute();
             return $result->fetchArray(SQLITE3_ASSOC)["time"];
         }
@@ -68,8 +67,9 @@ class SQLite {
      *
      * @return bool
      */
-    public function hasTime($player): bool {
-        if($player instanceof Player) {
+    public function hasTime($player): bool
+    {
+        if ($player instanceof Player) {
             $uuid = $player->getRawUniqueId();
             $query = "SELECT time FROM players WHERE uuid = :uuid";
             $stmt = $this->database->prepare($query);
@@ -77,8 +77,8 @@ class SQLite {
             $result = $stmt->execute();
             return $result->fetchArray(SQLITE3_ASSOC)["time"] !== null ? true : false;
         }
-        if(is_string($player)) {
-            $query = "SELECT time FROM players WHERE username = :username";
+        if (is_string($player)) {
+            $query = "SELECT time FROM players WHERE username = :username COLLATE NOCASE";
             $stmt = $this->database->prepare($query);
             $stmt->bindValue(":username", $player);
             $result = $stmt->execute();
@@ -90,7 +90,8 @@ class SQLite {
     /**
      * @param Player $player
      */
-    public function registerTime(Player $player) {
+    public function registerTime(Player $player)
+    {
         $uuid = $player->getRawUniqueId();
         $username = $player->getName();
         $query = "INSERT INTO players(uuid, username, time) VALUES(:uuid, :username, :time);";
@@ -108,9 +109,9 @@ class SQLite {
      *
      * @throws PluginException
      */
-    public function setRawTime($player, int $time) {
-
-        if($player instanceof Player) {
+    public function setRawTime($player, int $time)
+    {
+        if ($player instanceof Player) {
             $uuid = $player->getRawUniqueId();
             $query = "UPDATE players SET time = :time WHERE uuid = :uuid";
             $stmt = $this->database->prepare($query);
@@ -119,9 +120,8 @@ class SQLite {
             $stmt->execute();
             return;
         }
-
-        if(is_string($player)) {
-            $query = "UPDATE players SET time = :time WHERE username = :username";
+        if (is_string($player)) {
+            $query = "UPDATE players SET time = :time WHERE username = :username COLLATE NOCASE";
             $stmt = $this->database->prepare($query);
             $stmt->bindValue(":time", $time);
             $stmt->bindValue(":username", $player);
