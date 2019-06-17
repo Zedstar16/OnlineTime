@@ -1,6 +1,6 @@
 name: OnlineTime
 main: Zedstar16\OnlineTime\Main
-version: 1.3
+version: 1.4
 api: 3.0.0
 load: POSTWORLD
 author: Zedstar16
