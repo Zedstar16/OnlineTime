@@ -7,22 +7,54 @@ namespace Zedstar16\OnlineTime;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use Zedstar16\OnlineTime\database\SQLite;
 
+
 class Main extends PluginBase implements Listener
 {
     public static $times = [];
+
+    /** @var Array */
+    public $moveTimes = [];
+
     /** @var SQLite */
     public $db;
 
     public function onEnable(): void
     {
+        $this->getScheduler()->scheduleRepeatingTask(new IdleTime($this), 20);
+        // Check idle time every 1 second, cancel when entity moves.
+
         $this->db = new SQLite($this);
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
+    }
+
+    public function onMove(PlayerMoveEvent $event)
+    {
+        $player = $event->getPlayer();
+        $pn = strtolower($player->getName());
+
+        if (isset($this->moveTimes[$pn])) {
+            if ($this->moveTimes[$pn]['afk'] === true) {
+                $this->moveTimes[$pn]['afk'] = 'NO';
+                $this->moveTimes[$pn]['count'] = 0;
+                $this->moveTimes[$pn]['checked'] = true;
+            } else {
+                if (isset($this->moveTimes[$pn]['checked'])) return;
+                $this->moveTimes[$pn]['afk'] = null;
+                $this->moveTimes[$pn]['count'] = 0;
+            }
+        } else {
+            $this->moveTimes[$pn] = [
+                'count' => 0,
+                'afk' => null
+            ];
+        }
     }
 
     public function onJoin(PlayerJoinEvent $event)
@@ -32,6 +64,11 @@ class Main extends PluginBase implements Listener
         }
         $pn = strtolower($event->getPlayer()->getName());
         self::$times[$pn] = time();
+
+        $this->moveTimes[$pn] = [
+            'count' => 0,
+            'afk' => null
+        ];
     }
 
     public function onQuit(PlayerQuitEvent $event)
@@ -43,6 +80,7 @@ class Main extends PluginBase implements Listener
             $this->db->setRawTime($p, ($old + (time() - self::$times[$player])));
             unset(self::$times[$player]);
         }
+        if (isset($this->moveTimes[$player])) unset($this->moveTimes[$player]);
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool
@@ -181,6 +219,7 @@ class Main extends PluginBase implements Listener
     {
         $pn = "$pn";
         $pn = strtolower($pn);
+        if (!isset(self::$times[$pn])) return '00:00:00';
         $t = time() - self::$times[$pn];
         return ($t < 0 ? '-' : '') . sprintf("%02d%s%02d%s%02d", floor(abs($t) / 3600), ":", (abs($t) / 60) % 60, ":", abs($t) % 60);
     }
