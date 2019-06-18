@@ -23,5 +23,7 @@ The plugin will measure online times as soon as it is added to the server
 # TODO
 - Add floating text of top online players (soon)
 - Add a rewards system for top most active players (after a while)
-
+- MySQL support
+- Active online time
+- daily, weekly and monthly times & top
 
