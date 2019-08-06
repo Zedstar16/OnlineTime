@@ -48,7 +48,7 @@ class Main extends PluginBase implements Listener
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool
     {
         if ($command->getName() == "onlinetime") {
-            if (!$sender instanceof Player && !isset($args[1]) && strtolower($args[0]) == "session") {
+            if (!$sender instanceof Player && !isset($args[1]) && isset($args[0]) && strtolower($args[0]) == "session") {
                 $sender->sendMessage("You can only get the online time of other players, not yourself");
                 return false;
             }
