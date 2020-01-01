@@ -9,6 +9,8 @@ Measure how long players are spending on your server!
 
 The plugin will measure online times as soon as it is added to the server
 
+# This version has Anti-AFK Support, if a player is idle for more than 5 minutes, any additonal online time will not be counted until they move again
+
 - Get a compiled .phar version [here](https://poggit.pmmp.io/p/OnlineTime/1.2)
 - Great for seeing player activity and finding the most active players on the server!
 - Addon support for [ScoreHud](https://poggit.pmmp.io/p/ScoreHud), get the Addon [here](https://github.com/JackMD/ScoreHud-Addons)
