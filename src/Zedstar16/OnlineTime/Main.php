@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Zedstar16\OnlineTime;
 
+use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerMoveEvent;
@@ -41,6 +42,7 @@ class Main extends PluginBase implements Listener
 
     public function onQuit(PlayerQuitEvent $event)
     {
+
         $player = strtolower($event->getPlayer()->getName());
         $p = $event->getPlayer();
         if(isset(self::$lastmoved[$player])){
@@ -71,8 +73,8 @@ class Main extends PluginBase implements Listener
                     self::$times[$name] = self::$times[$name] + $diff;
                 } else self::$lastmoved[$name] = time();
             }
+            self::$lastmoved[$name] = time();
         }
-        self::$lastmoved[$name] = time();
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool
