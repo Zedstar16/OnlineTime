@@ -58,14 +58,19 @@ class Main extends PluginBase implements Listener
     }
 
     public function onMove(PlayerMoveEvent $event){
-        $timeout = $this->timeout;
+        $to = $event->getTo();
+        $from = $event->getFrom();
         $name = $event->getPlayer()->getLowerCaseName();
-        if(isset(self::$lastmoved[$name])){
-            $diff = (time() - self::$lastmoved[$name])-$timeout;
-            if($diff >= $timeout){
-                $event->getPlayer()->getPlayer()->sendMessage("§7You have been idle for §f".(intval($diff/60)." §7mins"));
-                self::$times[$name] = self::$times[$name] + $diff;
-            }else self::$lastmoved[$name] = time();
+        // Check that user is not moving from afk pool or auto run
+        if($to->getYaw() !== $from->getYaw() or $to->getPitch() !== $from->getPitch()) {
+            $timeout = $this->timeout;
+            if (isset(self::$lastmoved[$name])) {
+                $diff = (time() - self::$lastmoved[$name]) - $timeout;
+                if ($diff >= $timeout) {
+                    $event->getPlayer()->getPlayer()->sendMessage("§7You have been idle for §f" . (intval($diff / 60) . " §7mins"));
+                    self::$times[$name] = self::$times[$name] + $diff;
+                } else self::$lastmoved[$name] = time();
+            }
         }
         self::$lastmoved[$name] = time();
     }
