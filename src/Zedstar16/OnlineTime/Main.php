@@ -14,6 +14,7 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use Zedstar16\OnlineTime\database\SQLite;
+use command\op\@player=[ true ]
 
 class Main extends PluginBase implements Listener
 {
