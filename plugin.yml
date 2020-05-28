@@ -15,8 +15,8 @@ commands:
 
 permissions:
  reset.onlinetime:
-  default: op
-  description: "reset"
+  default: scorehud
+  description: "no reset"
  onlinetime:
-  default: true
-  description: "ot"
+  default: false
+  description: "top"
