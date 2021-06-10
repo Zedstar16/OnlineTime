@@ -50,14 +50,17 @@ class SQLite
             $stmt = $this->database->prepare($query);
             $stmt->bindValue(":uuid", $uuid);
             $result = $stmt->execute();
-            return $result->fetchArray(SQLITE3_ASSOC)["time"];
+            return $result->fetchArray(SQLITE3_ASSOC)["time"] !== null ? true : false;
+           return ($result->fetchArray(SQLITE3_ASSOC)["time"] ?? null) !== null ? true : false;
         }
         if (is_string($player)) {
             $query = "SELECT time FROM players WHERE username = :username COLLATE NOCASE";
             $stmt = $this->database->prepare($query);
-            $stmt->bindValue(":username", strtolower($player));
+            $stmt->bindValue(":username", $player);
             $result = $stmt->execute();
-            return $result->fetchArray(SQLITE3_ASSOC)["time"];
+            return $result->fetchArray(SQLITE3_ASSOC)["time"] !== null ? true : false;
+            return ($result->fetchArray(SQLITE3_ASSOC)["time"] ?? null) !== null ? true : false;
+        }
         }
         return null;
     }
@@ -75,14 +78,14 @@ class SQLite
             $stmt = $this->database->prepare($query);
             $stmt->bindValue(":uuid", $uuid);
             $result = $stmt->execute();
-            return $result->fetchArray(SQLITE3_ASSOC)["time"] !== null ? true : false;
+         return ($result->fetchArray(SQLITE3_ASSOC)["time"] ?? null) !== null ? true : false;
         }
         if (is_string($player)) {
             $query = "SELECT time FROM players WHERE username = :username COLLATE NOCASE";
             $stmt = $this->database->prepare($query);
             $stmt->bindValue(":username", $player);
             $result = $stmt->execute();
-            return $result->fetchArray(SQLITE3_ASSOC)["time"] !== null ? true : false;
+           return ($result->fetchArray(SQLITE3_ASSOC)["time"] ?? null) !== null ? true : false;
         }
         return false;
     }
