@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Zedstar16\OnlineTime;
 
+use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
-use pocketmine\Player;
+use pocketmine\permission\DefaultPermissions;
+use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -17,16 +20,22 @@ class Main extends PluginBase implements Listener
 {
     public static $times = [];
     /** @var SQLite */
-    public $db;
+    public SQLite $db;
+    // How long to wait in seconds before not counting a players online time
+    public int $timeout = 300;
+
+    public static $lastmoved = [];
 
     public function onEnable(): void
     {
         $this->db = new SQLite($this);
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
-    }
+ }
 
     public function onJoin(PlayerJoinEvent $event)
     {
+
+
         if ($this->db->hasTime($event->getPlayer()) === false) {
             $this->db->registerTime($event->getPlayer());
         }
@@ -36,12 +45,38 @@ class Main extends PluginBase implements Listener
 
     public function onQuit(PlayerQuitEvent $event)
     {
+
         $player = strtolower($event->getPlayer()->getName());
         $p = $event->getPlayer();
+        if(isset(self::$lastmoved[$player])){
+            $diff = time() - self::$lastmoved[$player];
+            if(time() - self::$lastmoved[$player] >= $this->timeout){
+                self::$times[$player] = self::$times[$player] + $diff;
+            }
+            unset(self::$lastmoved[$player]);
+        }
         if (isset(self::$times[$player])) {
             $old = $this->db->getRawTime($p);
             $this->db->setRawTime($p, ($old + (time() - self::$times[$player])));
             unset(self::$times[$player]);
+        }
+    }
+
+    public function onMove(PlayerMoveEvent $event){
+        $to = $event->getTo();
+        $from = $event->getFrom();
+        $name = strtolower($event->getPlayer()->getName());
+        // Check that user is not moving from afk pool or auto run
+        if($to->getYaw() !== $from->getYaw() or $to->getPitch() !== $from->getPitch()) {
+            $timeout = $this->timeout;
+            if (isset(self::$lastmoved[$name])) {
+                $diff = (time() - self::$lastmoved[$name]) - $timeout;
+                if ($diff >= $timeout) {
+                    $event->getPlayer()->sendMessage("§7You have been idle for §f" . (intval($diff / 60) . " §7mins"));
+                    self::$times[$name] = self::$times[$name] + $diff;
+                } else self::$lastmoved[$name] = time();
+            }
+            self::$lastmoved[$name] = time();
         }
     }
 
@@ -52,36 +87,42 @@ class Main extends PluginBase implements Listener
                 $sender->sendMessage("You can only get the online time of other players, not yourself");
                 return false;
             }
-            $h = base64_decode("wqdkPS09LT3Cp2FPbmxpbmXCp2JUaW1lIEhlbHDCp2Q9LT0tPQrCp2Ivb3QgdG9wIFtwYWdlXSAgwqdhVmlldyB0aGUgdG9wIG1vc3QgYWN0aXZlIHBsYXllcnMKwqdiL290IHRvdGFsIFtwbGF5ZXJdICDCp2FWaWV3IGhvdyBsb25nIHlvdSBvciB0aGUgcGxheWVyIHlvdSBzZWxlY3RlZCBoYXZlIHNwZW50IG9ubGluZSBpbiB0b3RhbArCp2Ivb3Qgc2Vzc2lvbiBbcGxheWVyXSAgwqdhVmlldyBob3cgbG9uZyB5b3Ugb3IgdGhlIHBsYXllciB5b3Ugc2VsZWN0ZWQgaGF2ZSBzcGVudCBvbmxpbmUKwqdiL290IGluZm8gIMKnYVZpZXcgcGx1Z2luIHZlcnNpb24gYW5kIGNyZWRpdHMKCSAgICA==");
-            $c = base64_decode("wqdhT25saW5lwqdiVGltZQrCp2RWZXJzaW9uOiAxLjEKwqdjTWFkZSBCeTogwqdhWmVkc3RhcjE2LCDCp2JUd2l0dGVyOiDCp2VAWmVkc3RhcjE2MDM=");
+            $helplist = [
+                "§a-=-=§9OnlineTime§a=-=-",
+                "§b/ot total (player)",
+                "§b/ot session (player)",
+                "§b/ot top (page)"
+            ];
+            $h = implode("\n", $helplist);
             if (isset($args[0])) {
                 switch ($args[0]) {
                     case "total":
                         if (!isset($args[1])) {
                             $time = explode(":", $this->getTotalTime($sender->getName()));
-                            $sender->sendMessage("§aYour total online time is: §b" . $time[0] . "§9hrs §b" . $time[1] . "§9mins §b" . $time[2] . "§9secs");
+                            $sender->sendMessage("§9Your total online time is: §b" . $time[0] . " §9hrs §b" . $time[1] . " §9mins §b" . $time[2] . " §9secs");
                         } else if (isset($args[1])) {
-                            strtolower($args[1]);
-                            if ($this->getServer()->getPlayer($args[1]) !== null) {
-                                $name = $this->getServer()->getPlayer($args[1])->getName();
+                           // strtolower($args[1]);
+                            if ($this->getServer()->getPlayerByPrefix($args[1]) !== null) {
+                                $name = $this->getServer()->getPlayerByPrefix($args[1])->getName();
                                 $time = explode(":", $this->getTotalTime($name));
-                                $sender->sendMessage("§aThe total online time of $name is: §b" . $time[0] . "§9hrs §b" . $time[1] . "§9mins §b" . $time[2] . "§9secs");
+                                $sender->sendMessage("§9The total online time of $name is: §b" . $time[0] . " §9hrs §b" . $time[1] . "§9mins §b" . $time[2] . " §9secs");
                             } else {
                                 if ($this->db->hasTime($args[1])) {
                                     $time = explode(":", $this->getTotalTime($args[1]));
-                                    $sender->sendMessage("§aThe total online time of $args[1] is: §b" . $time[0] . "§9hrs §b" . $time[1] . "§9mins §b" . $time[2] . "§9secs");
+                                    $sender->sendMessage("§9The total online time of $args[1] is: §b" . $time[0] . " §9hrs §b" . $time[1] . " §9mins §b" . $time[2] . " §9secs");
                                 } else $sender->sendMessage("§cPlayer not found in database");
                             }
-                        }break;case"info":$sender->sendMessage($c);break;
+                        }
+                        break;
                     case "session":
                         if (!isset($args[1])) {
                             $time = explode(":", $this->getSessionTime($sender->getName()));
-                            $sender->sendMessage("§aYour current session time is: §b" . $time[0] . "§9hrs §b" . $time[1] . "§9mins §b" . $time[2] . "§9secs");
+                            $sender->sendMessage("§9Your current session time is: §b" . $time[0] . " §9hrs §b" . $time[1] . " §9mins §b" . $time[2] . " §9secs");
                         } else if (isset($args[1])) {
-                            if ($this->getServer()->getPlayer($args[1]) !== null) {
-                                $name = $this->getServer()->getPlayer($args[1])->getName();
+                            if ($this->getServer()->getPlayerByprefix($args[1]) !== null) {
+                                $name = $this->getServer()->getPlayerByPrefix($args[1])->getName();
                                 $time = explode(":", $this->getSessionTime($name));
-                                $sender->sendMessage("§aThe current session time of $name is: §b" . $time[0] . "§9hrs §b" . $time[1] . "§9mins §b" . $time[2] . "§9secs");
+                                $sender->sendMessage("§9The current session time of $name is: §b" . $time[0] . " §9hrs §b" . $time[1] . " §9mins §b" . $time[2] . " §9secs");
                             } else {
                                 $sender->sendMessage("§c$args[1] is not online");
                             }
@@ -111,7 +152,7 @@ class Main extends PluginBase implements Listener
                             }
                             $page = $args[1];
                         }
-                        $sender->sendMessage("§bTop §aOnline §bTimes");
+                        $sender->sendMessage("§bTop Online Times");
                         $sender->sendMessage("§6Displaying page §b" . ($page) . "§6 out of §b$pages");
                         foreach ($data as $key => $val) {
                             $i++;
@@ -119,7 +160,7 @@ class Main extends PluginBase implements Listener
                                 $session = in_array($key, $this->getServer()->getOnlinePlayers()) ? self::$times[$key] : 0;
 
                                 $formattedtime = $this->getFormattedTime(($val + $session));
-                                $sender->sendMessage("§l§4$i.  §a$key §b" . $formattedtime);
+                                $sender->sendMessage("§l§9$i.  §r§a$key §b" . $formattedtime);
                             }
                         }
                         break;
@@ -135,14 +176,14 @@ class Main extends PluginBase implements Listener
                         break;
                     default:
                         $sender->sendMessage($h);
-                        if ($sender->isOp()) {
+                        if ($sender->hasPermission(DefaultPermissions::ROOT_OPERATOR)) {
                             $sender->sendMessage("§b/ot reset all  §aReset All Online Time data");
                         }
                         return true;
                 }
             } else {
                 $sender->sendMessage($h);
-                if ($sender->isOp()) {
+                if ($sender->hasPermission(DefaultPermissions::ROOT_OPERATOR)) {
                     $sender->sendMessage("§b/ot reset all  §aReset All Online Time data");
                 }
             }
@@ -159,18 +200,18 @@ class Main extends PluginBase implements Listener
     {
         $f = sprintf("%02d%s%02d%s%02d", floor(abs($t) / 3600), ":", (abs($t) / 60) % 60, ":", abs($t) % 60);
         $time = explode(":", $f);
-        return $time[0] . "§9hrs §b" . $time[1] . "§9mins §b" . $time[2] . "§9secs";
+        return "§b".$time[0] . " §9hrs §b" . $time[1] . " §9mins §b" . $time[2] . " §9secs";
     }
 
     public function getTotalTime($pn): String
     {
         $pn = "$pn";
         $pn = strtolower($pn);
-        if ($this->getServer()->getPlayer($pn) !== null) {
-            $p = $this->getServer()->getPlayer($pn);
+        if ($this->getServer()->getPlayerByPrefix($pn) !== null) {
+            $p = $this->getServer()->getPlayerbYpREFIX($pn);
         } else $p = $pn;
         $totalsecs = $this->db->getRawTime($p);
-        if ($this->getServer()->getPlayer($pn) !== null) {
+        if ($this->getServer()->getPlayerByPrefix($pn) !== null) {
             $t = (time() - self::$times[$pn]);
         } else $t = 0;
         $t = ($t + $totalsecs);
@@ -190,12 +231,20 @@ class Main extends PluginBase implements Listener
         foreach (self::$times as $player => $time) {
             $player = "$player";
             $player = strtolower($player);
-            if ($this->getServer()->getPlayer($player) !== null) {
-                $p = $this->getServer()->getPlayer($player);
+            if(isset(self::$lastmoved[$player])){
+                $diff = time() - self::$lastmoved[$player];
+                if(time() - self::$lastmoved[$player] >= $this->timeout){
+                    self::$times[$player] = self::$times[$player] + $diff;
+                }
+                unset(self::$lastmoved[$player]);
+            }
+            if ($this->getServer()->getPlayerByPrefix($player) !== null) {
+                $p = $this->getServer()->getPlayerByPrefix($player);
             } else $p = $player;
             $old = $this->db->getRawTime($p);
             $this->db->setRawTime($p, ($old + (time() - self::$times[$player])));
             unset(self::$times[$player]);
+
         }
     }
 }
