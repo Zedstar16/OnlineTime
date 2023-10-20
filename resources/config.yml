@@ -1,0 +1,16 @@
+database:
+  # choose either "sqlite3" or "mysql", if using mysql please fill out all the credentials
+  provider: "sqlite3"
+
+  sqlite3:
+    # name of db file located in plugin_data/OnlineTime/
+    db-name: "database.db"
+
+  # Only needs to be filled out if you are using mysql as your database provider
+  # db-thread-count is how many threads the plugin will use to process database queries
+  mysql:
+    host: "127.0.0.1"
+    user: "dbusername"
+    password: "dbpassword"
+    database: "dbname"
+    db-thread-count: 3

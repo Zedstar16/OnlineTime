@@ -1,22 +1,11 @@
+---
 name: OnlineTime
-main: Zedstar16\OnlineTime\Main
-version: 1.3
-api: 3.0.0
-load: POSTWORLD
-author: Zedstar16
-description: Measure time spent online
-website: https://github.com/Zedstar16/OnlineTime
-
-commands:
- onlinetime:
-  aliases: [ot, otime]
-  description: "View how much time you've spent on the server"
-  permission: onlinetime
+version: 2.0.0
+main: Zedstar16\OnlineTime\Loader
+api: 5.0.0
 
 permissions:
- reset.onlinetime:
-  default: op
-  description: "reset"
- onlinetime:
-  default: true
-  description: "ot"
+  onlinetime.command:
+    default: true
+...
+
