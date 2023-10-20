@@ -2,16 +2,13 @@
 
 namespace Zedstar16\OnlineTime\listener;
 
-use pocketmine\event\block\BlockBreakEvent;
-use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
-use pocketmine\item\enchantment\EnchantmentInstance;
-use pocketmine\item\enchantment\VanillaEnchantments;
-use pocketmine\item\VanillaItems;
+use pocketmine\event\world\ChunkLoadEvent;
+use pocketmine\event\world\ChunkUnloadEvent;
 use Zedstar16\OnlineTime\Loader;
 use Zedstar16\OnlineTime\OnlineTime;
 
@@ -26,6 +23,22 @@ class EventListener implements Listener
 
     public function onJoin(PlayerJoinEvent $event) {
         $this->ot->addSession($event->getPlayer());
+    }
+
+    public function onChunkLoad(ChunkLoadEvent $event){
+        foreach (Loader::getInstance()->getLeaderboardCfg() as $lb){
+            if($lb["cx"] === $event->getChunkX() && $lb["cz"] === $event->getChunkZ()){
+                Loader::getLeaderboardManager()->spawnLeaderboard($lb);
+            }
+        }
+    }
+
+    public function onChunkUnload(ChunkUnloadEvent $event){
+        foreach (Loader::getInstance()->getLeaderboardCfg() as $lb){
+            if($lb["cx"] === $event->getChunkX() && $lb["cz"] === $event->getChunkZ()){
+                Loader::getLeaderboardManager()->removeEntity(serialize($lb));
+            }
+        }
     }
 
     public function onMove(PlayerMoveEvent $event) {

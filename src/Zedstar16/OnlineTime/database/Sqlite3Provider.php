@@ -2,7 +2,6 @@
 
 namespace Zedstar16\OnlineTime\database;
 
-use DateTime;
 use Zedstar16\OnlineTime\database\thread\DatabaseThreadHandler;
 
 class Sqlite3Provider extends ProviderInterface

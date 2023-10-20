@@ -9,6 +9,7 @@ use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\log\ThreadSafeLogger;
 use SQLite3;
 use SQLite3Result;
+use Throwable;
 use function gc_collect_cycles;
 use function gc_enable;
 use function gc_mem_caches;
@@ -74,7 +75,7 @@ class SQlite3Thread extends DatabaseThread
                         gc_mem_caches();
                     }
                     $this->inUse = 0;
-                } catch (\Throwable $error) {
+                } catch (Throwable $error) {
                     $this->logger->logException($error);
                     $this->inUse = 0;
                 }

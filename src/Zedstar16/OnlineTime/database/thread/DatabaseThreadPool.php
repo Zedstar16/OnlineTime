@@ -74,11 +74,13 @@ class DatabaseThreadPool
     }
 
     public function shutdown(): void {
+        usleep(100000);
         foreach ($this->workers as $thread) {
             if ($thread->isInUse()) {
                 Server::getInstance()->getLogger()->info("Waiting for database threads to execute final queries");
             }
             while ($thread->isInUse()) {
+                echo null;
             }
             $thread->stop();
             $thread->join();

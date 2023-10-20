@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Zedstar16\OnlineTime\database\thread;
 
+use pmmp\thread\Thread as ThreadAlias;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\log\ThreadSafeLogger;
 use pocketmine\thread\Thread;
@@ -16,7 +17,7 @@ abstract class DatabaseThread extends Thread
 {
 
     public int $busy_score = 0;
-    public int $inUse = 0;
+    protected int $inUse = 0;
 
     protected ThreadSafeArray $actionQueue;
     protected ThreadSafeArray $actionResults;
@@ -48,7 +49,7 @@ abstract class DatabaseThread extends Thread
         return $this->inUse === 1;
     }
 
-    public function start(int $options = Thread::INHERIT_NONE): bool {
+    public function start(int $options = ThreadAlias::INHERIT_NONE): bool {
         $this->running = true;
         return parent::start($options);
     }

@@ -2,42 +2,39 @@
 
 namespace Zedstar16\OnlineTime\session;
 
-use pocketmine\player\Player;
-use Zedstar16\OnlineTime\database\thread\DatabaseThreadHandler;
-
 class Session
 {
 
 
-    private int $start_timestamp;
+    private int $startTimestamp;
 
-    private int $last_active_timestamp;
+    private int $lastActiveTimestamp;
 
-    private int $duration;
+    private float $duration;
 
     public function __construct(){
-        $this->start_timestamp = time();
-        $this->last_active_timestamp = time();
+        $this->startTimestamp = time();
+        $this->lastActiveTimestamp = time();
         $this->duration = 0;
     }
 
     public function setLastActive() : void{
-        $this->last_active_timestamp = time();
+        $this->lastActiveTimestamp = time();
     }
 
     public function getLastActiveTimestamp() : int{
-        return $this->last_active_timestamp;
+        return $this->lastActiveTimestamp;
     }
 
     public function getStartTimestamp() : int{
-        return $this->start_timestamp;
+        return $this->startTimestamp;
     }
 
-    public function incrementDuration() : void{
-        $this->duration += 10;
+    public function incrementDuration(float $amount) : void{
+        $this->duration += $amount;
     }
     public function getDuration() : int{
-        return $this->duration;
+        return (int)$this->duration;
     }
 
 

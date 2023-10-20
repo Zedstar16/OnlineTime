@@ -10,6 +10,7 @@ use pmmp\thread\ThreadSafeArray;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\log\ThreadSafeLogger;
 
+use Throwable;
 use function gc_collect_cycles;
 use function gc_enable;
 use function gc_mem_caches;
@@ -46,7 +47,7 @@ class MysqliThread extends DatabaseThread
             $this->log("Attempting $connectstr to DB");
             try {
                 $con = @new mysqli($this->db_host, $this->db_username, $this->db_password, $this->db_schema);
-            } catch (\Throwable $e) {
+            } catch (Throwable) {
             }
             $error = $con === null || $con->connect_error;
             $this->log(!$error ? "$connectstr Success" : "$connectstr Failed with error: " . ($con?->connect_error ?? "Unable to make connection to DB"));
@@ -106,7 +107,7 @@ class MysqliThread extends DatabaseThread
                         gc_mem_caches();
                     }
                     $this->inUse = 0;
-                } catch (\Throwable $error) {
+                } catch (Throwable $error) {
                     $this->logger->logException($error);
                     $this->inUse = 0;
                 }

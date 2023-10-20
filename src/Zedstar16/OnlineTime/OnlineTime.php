@@ -6,7 +6,6 @@ use pocketmine\player\Player;
 use Zedstar16\OnlineTime\database\MysqliProvider;
 use Zedstar16\OnlineTime\database\ProviderInterface;
 use Zedstar16\OnlineTime\database\Sqlite3Provider;
-use Zedstar16\OnlineTime\database\thread\DatabaseThreadHandler;
 use Zedstar16\OnlineTime\session\Session;
 
 class OnlineTime
@@ -37,32 +36,6 @@ class OnlineTime
         $hrs = $seconds / 3600;
         $minutes = intval(($hrs - floor($hrs)) * 60);
         return [floor($hrs), $minutes];
-    }
-
-    public function insertplaceholderdata() {
-        $now = time();
-        $then = $now - (86400 * 30);
-        $names = yaml_parse_file("names.yml");
-        $z = 0;
-        foreach ($names as $xuid => $name) {
-            $z++;
-            $q1 = "INSERT INTO XuidRelation values ('$xuid', '$name')";
-            echo "[$z/500] REGISTERED IN DB [$q1]\n";
-            DatabaseThreadHandler::add($q1, function ($result) use ($z, $q1) {
-                echo "[" . ($result ? "T" : "F") . "] [$z/500] REGISTERED IN DB [$q1]\n";
-            });
-            $x = 0;
-            for ($i = $then; $i < $now; $i += 86400) {
-                $st = mt_rand($i, intval($i + (86400 / 2)));
-                $dur = mt_rand(0, 45000);
-                $x++;
-                $q2 = "INSERT INTO PlayerSessions values ('$xuid', $st, $dur)";
-
-                DatabaseThreadHandler::add($q2, function ($result) use ($x, $z, $q2) {
-                    echo "[" . ($result ? "T" : "F") . "] [$z/500] [$x/30] INJECT [$q2]\n";
-                });
-            }
-        }
     }
 
     public static function getInstance(): OnlineTime {

@@ -41,7 +41,7 @@ class DatabaseThreadHandler
     }
 
 
-    public static function add($query, ?callable $callable = null, $queryType = 0): void {
+    public static function add($query, ?callable $callable = null, $queryType = DatabaseThread::TYPE_QUERY_SINGLE): void {
         $requestID = mt_rand(0, 999999999);
         if ($callable !== null) {
             self::$callbacks[$requestID] = $callable;
