@@ -57,6 +57,7 @@ class EventListener implements Listener
         }
     }
 
+
     // Chatting in chat should be considered a form of activity even if not moving around
     public function onChat(PlayerChatEvent $event) {
         $p = $event->getPlayer();

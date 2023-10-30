@@ -21,6 +21,7 @@ class MysqliThread extends DatabaseThread
 {
 
     private string $db_host, $db_username, $db_password, $db_schema;
+    private int $reconnect_sleep_time = 1;
 
     public function __construct(int $threadID, SleeperHandlerEntry $sleeperHandlerEntry, string $db_host, string $db_username, string $db_password, string $db_schema, ThreadSafeLogger $logger) {
         parent::__construct($threadID, $sleeperHandlerEntry, $logger);
@@ -50,9 +51,15 @@ class MysqliThread extends DatabaseThread
             } catch (Throwable) {
             }
             $error = $con === null || $con->connect_error;
-            $this->log(!$error ? "$connectstr Success" : "$connectstr Failed with error: " . ($con?->connect_error ?? "Unable to make connection to DB"));
-            sleep(1);
+            $this->log(!$error ? "$connectstr Success" : "$connectstr Failed with error: " . ($con?->connect_error ?? "Unable to make connection to DB, retrying in $this->reconnect_sleep_time secs..."));
+            if($error) {
+                sleep($this->reconnect_sleep_time);
+                if($this->reconnect_sleep_time < 120) {
+                    $this->reconnect_sleep_time *= 2;
+                }
+            }
         }
+        $this->reconnect_sleep_time = 1;
         return $con;
     }
 
