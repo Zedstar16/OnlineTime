@@ -12,6 +12,8 @@ use Zedstar16\OnlineTime\util\Util;
 class OnlineTimeCommand extends Command
 {
 
+    private const LINE_SEPARATOR = "-----------------------------------";
+    
     public function __construct(string $name, Translatable|string $description = "", Translatable|string|null $usageMessage = null, array $aliases = []) {
         $this->setPermission("onlinetime.command");
         parent::__construct($name, $description, $usageMessage, $aliases);
@@ -19,11 +21,12 @@ class OnlineTimeCommand extends Command
 
     public function execute(CommandSender $sender, string $commandLabel, array $args) {
         if (!isset($args[0])) {
-            $sender->sendMessage("
-            /ot (username)
-            /ot top [7d/30d/all]
-            /ot (username) From:(dd/mm/yyyy) To:(dd/mm/yyyy)
-            ");
+            $sender->sendMessage(implode("\n", [
+                "  §l§8»§r §g§lOnline Time Usage§r§l§8 «",
+                "§l§8»§r§7 /ot (username)",
+                "§l§8»§r§7 /ot top [7d/30d/45d/90d/all]",
+                "§l§8»§r§7 /ot (username) From:(dd/mm/yyyy) To:(dd/mm/yyyy)"
+            ]));
             return;
         }
         $provider = OnlineTime::getInstance()->getProvider();
@@ -36,7 +39,7 @@ class OnlineTimeCommand extends Command
                 } elseif (is_numeric($period)) {
                     $lookbackPeriod = time() - (86400 * (int)$period);
                 }else{
-                    $sender->sendMessage("§cYou must provide a number of days, ie 7d or 90d or 365d etc");
+                    $sender->sendMessage(" §l§8»§r §cYou must provide a number of days, ie 7d or 90d or 365d etc");
                     return;
                 }
             }
@@ -46,7 +49,7 @@ class OnlineTimeCommand extends Command
                 foreach ($result as $index => $playerOt) {
                     $position = $index + 1;
                     $timeComponents = OnlineTime::getInstance()->calcTimeComponents($playerOt["total_duration"]);
-                    $sender->sendMessage(" §l§8»§r $position. §g$playerOt[username] §f$timeComponents[0]§7hrs §f$timeComponents[1]§7mins §7");
+                    $sender->sendMessage(" §l§8»§r §e$position. §g$playerOt[username] §f$timeComponents[0]§7hrs §f$timeComponents[1]§7mins §7");
                 }
                 $sender->sendMessage(str_repeat("-", 35));
             });
@@ -65,7 +68,7 @@ class OnlineTimeCommand extends Command
                         return;
                     }
                     $sender->sendMessage("  §l§8»§r §g§lOnline Time for §f{$target}§r§l§8 «");
-                    $sender->sendMessage(Util::SEPARATOR);
+                    $sender->sendMessage(self::LINE_SEPARATOR);
                     foreach ($result as $index => $playerOt) {
                         $index_name = [
                             "duration_7d" => "Last 7d",
@@ -75,18 +78,20 @@ class OnlineTimeCommand extends Command
                         $timeComponents = OnlineTime::getInstance()->calcTimeComponents($playerOt + $sessionDuration);
                         $sender->sendMessage(" §l§8»§r §g$index_name[$index]: §f$timeComponents[0]§7hrs §f$timeComponents[1]§7mins §7");
                     }
-                    $sender->sendMessage(Util::SEPARATOR);
+                    $sender->sendMessage(self::LINE_SEPARATOR);
                 });
             } else {
-                $specificUsage =
-                    "Usage examples of Specific lookup:
-                    Date format should be dd/mm/yyyy
-                    
-                    OT between 1st July 2023 to 21st August 2023
-                    /ot username 1/7/2023 21/8/2023
-                    
-                    OT between 24th December 2022 to 8th March 2023
-                    /ot username 24/12/2022 8/3/2023";
+                $specificUsage = [
+                    "§eUsage examples of Specific lookup:",
+                    "§gDate format should be dd/mm/yyyy",
+                    "",
+                    "§gOT between 1st July 2023 to 21st August 2023",
+                    "§f- §e/ot username 1/7/2023 21/8/2023",
+                    "",
+                    "§gOT between 24th December 2022 to 8th March 2023",
+                    "§f- §e/ot username 24/12/2022 8/3/2023"
+                ];
+                $specificUsage = implode("\n", $specificUsage);
                 if (count($args) !== 3) {
                     $sender->sendMessage($specificUsage);
                     return;
@@ -97,8 +102,19 @@ class OnlineTimeCommand extends Command
                     $sender->sendMessage($specificUsage);
                     return;
                 }
-                $provider->getTimeBetween($target, $from, $to, function ($result) {
-                    print_r($result);
+                $provider->getTimeBetween($target, $from, $to, function ($result, $sender, $target, $to, $from) {
+                    $toDate = date("D JS F Y", $to);
+                    $fromDate = date("D JS F Y", $from);
+                    if (($result["total_duration"] ?? null) === null) {
+                        $sender->sendMessage("§l§8»§r §f$target §chas no onlinetime between $fromDate to $toDate");
+                        return;
+                    }
+                    $sender->sendMessage("  §l§8»§r §g§lOnline Time for §f{$target}§r§l§8 «");
+                    $sender->sendMessage(self::LINE_SEPARATOR);
+                    $timeComponents = OnlineTime::getInstance()->calcTimeComponents($result);
+                    $sender->sendMessage(" §l§8»§r §gFrom §f$fromDate §gto §f$toDate");
+                    $sender->sendMessage(" §l§8»§r §f$timeComponents[0]§7hrs §f$timeComponents[1]§7mins §7");
+                    $sender->sendMessage(self::LINE_SEPARATOR);
                 });
             }
         }
