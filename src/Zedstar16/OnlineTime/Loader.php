@@ -31,6 +31,7 @@ class Loader extends PluginBase
         $ot = new OnlineTime();
         $this->getServer()->getPluginManager()->registerEvents(new EventListener($ot), $this);
         $this->getServer()->getCommandMap()->register("ot", new OnlineTimeCommand("onlinetime", "View player online times", null, ["ot"]));
+        $this->getServer()->getCommandMap()->register("ota", new OnlineTimeCommand("onlinetimeadmin", "Admin commands for OnlineTime", null, ["ota"]));
         $this->getScheduler()->scheduleRepeatingTask(new IncrementDurationTask(), 20);
         $this->getScheduler()->scheduleRepeatingTask(new UpdateLeaderboardsTask(), self::$cfg->get("leaderboard-update-interval", 60) * 20);
         self::$leaderboardManager->initialiseEntities();
