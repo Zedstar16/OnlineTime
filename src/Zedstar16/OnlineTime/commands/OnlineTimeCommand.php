@@ -38,7 +38,7 @@ class OnlineTimeCommand extends Command
                 } elseif (is_numeric($period)) {
                     $lookbackPeriod = (int)$period;
                 }else{
-                    $sender->sendMessage("§l§8»§r §cYou must provide a number of days, ie 7d or 90d or 365d etc");
+                    $sender->sendMessage("§l§8»§r §cYou must provide a number of days, ie 7d or 90d or 365d etc OR just \"all\"");
                     return;
                 }
             }
@@ -54,6 +54,10 @@ class OnlineTimeCommand extends Command
             });
         } else {
             $target = $args[0];
+            if(!OnlineTime::getInstance()->validateUsername($target)){
+                $sender->sendMessage("§l§8»§r §cInvalid username characters provided");
+                return;
+            }
             if (!isset($args[1])) {
                 $p = Server::getInstance()->getPlayerExact($target);
                 $sessionDuration = 0;

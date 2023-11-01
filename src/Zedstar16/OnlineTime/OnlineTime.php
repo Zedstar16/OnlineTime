@@ -38,6 +38,10 @@ class OnlineTime
         return [floor($hrs), $minutes];
     }
 
+    public function validateUsername(string $username): bool {
+        return preg_match("/^[a-z0-9 ]*$/i", $username);
+    }
+
     public static function getInstance(): OnlineTime {
         return self::$instance;
     }
