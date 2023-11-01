@@ -77,5 +77,14 @@ abstract class ProviderInterface
         DatabaseThreadHandler::add($query, $callable, DatabaseThread::TYPE_QUERY_ALL);
     }
 
+    public function reset(string $username, callable $callable): void {
+        DatabaseThreadHandler::add("
+            DELETE PlayerSessions
+            FROM PlayerSessions
+            JOIN XuidRelation ON PlayerSessions.xuid = XuidRelation.xuid
+            WHERE LOWER(XuidRelation.username) = LOWER('$username');
+        ", $callable);
+    }
+
 
 }

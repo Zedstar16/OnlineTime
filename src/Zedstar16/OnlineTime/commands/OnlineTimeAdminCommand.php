@@ -6,8 +6,10 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\lang\Translatable;
 use pocketmine\player\Player;
+use pocketmine\Server;
 use pocketmine\world\Position;
 use Zedstar16\OnlineTime\Loader;
+use Zedstar16\OnlineTime\OnlineTime;
 
 class OnlineTimeAdminCommand extends Command
 {
@@ -118,7 +120,26 @@ class OnlineTimeAdminCommand extends Command
                     unset($cfg[$id]);
                     Loader::getInstance()->setLeaderboardCfg($cfg);
                 } else $sender->sendMessage("§cLeaderboard with ID §f$id §cdoes not exist");
+            }else{
+                $sender->sendMessage("§cInvalid leaderboard subcommand given");
             }
+        }elseif($args[0] === "reset"){
+            $target = $args[1] ?? null;
+            if(!isset($target)){
+                $sender->sendMessage("§cYou must provide a username to reset onlinetime for");
+                return;
+            }
+            if(!OnlineTime::getInstance()->validateUsername($target)){
+                $sender->sendMessage("§cInvalid username characters provided");
+                return;
+            }
+            if(Server::getInstance()->getPlayerExact($target) !== null){
+                $sender->sendMessage("§cYou cannot reset a user's onlinetime while they are online");
+                return;
+            }
+            OnlineTime::getInstance()->getProvider()->reset($target, function ($result) use($sender, $target){
+                $sender->sendMessage("§aSuccessfully removed any existing records for §f$target");
+            });
         }
     }
 
