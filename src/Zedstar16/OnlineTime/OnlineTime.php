@@ -59,7 +59,7 @@ class OnlineTime
         $session = $this->sessions[$player->getName()] ?? null;
         if (isset($session)) {
             $this->provider->addSessionRecord($player->getXuid(), $session->getStartTimestamp(), $session->getDuration());
-            unset($session);
+            unset($this->sessions[$player->getName()]);
         }
     }
 

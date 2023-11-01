@@ -7,12 +7,11 @@ use pocketmine\command\CommandSender;
 use pocketmine\lang\Translatable;
 use pocketmine\Server;
 use Zedstar16\OnlineTime\OnlineTime;
-use Zedstar16\OnlineTime\util\Util;
 
 class OnlineTimeCommand extends Command
 {
 
-    private const LINE_SEPARATOR = "-----------------------------------";
+    const LINE_SEPARATOR = "-----------------------------------";
     
     public function __construct(string $name, Translatable|string $description = "", Translatable|string|null $usageMessage = null, array $aliases = []) {
         $this->setPermission("onlinetime.command");
@@ -23,9 +22,9 @@ class OnlineTimeCommand extends Command
         if (!isset($args[0])) {
             $sender->sendMessage(implode("\n", [
                 "  §l§8»§r §g§lOnline Time Usage§r§l§8 «",
-                "§l§8»§r§7 /ot (username)",
-                "§l§8»§r§7 /ot top [7d/30d/45d/90d/all]",
-                "§l§8»§r§7 /ot (username) From:(dd/mm/yyyy) To:(dd/mm/yyyy)"
+                "§l§8»§r§f /ot §g(username)",
+                "§l§8»§r§f /ot §gtop [7d/30d/45d/90d/all]",
+                "§l§8»§r§f /ot §g(username) §eFrom:§g(dd/mm/yyyy) §eTo:§g(dd/mm/yyyy)"
             ]));
             return;
         }
@@ -37,9 +36,9 @@ class OnlineTimeCommand extends Command
                 if ($args[1] === "all"){
                     $lookbackPeriod = -1;
                 } elseif (is_numeric($period)) {
-                    $lookbackPeriod = time() - (86400 * (int)$period);
+                    $lookbackPeriod = (int)$period;
                 }else{
-                    $sender->sendMessage(" §l§8»§r §cYou must provide a number of days, ie 7d or 90d or 365d etc");
+                    $sender->sendMessage("§l§8»§r §cYou must provide a number of days, ie 7d or 90d or 365d etc");
                     return;
                 }
             }
@@ -64,7 +63,11 @@ class OnlineTimeCommand extends Command
                 }
                 $provider->getRecentTime($target, function ($result) use ($sender, $target, $sessionDuration) {
                     if(($result["duration_total"] ?? null) === null){
-                        $sender->sendMessage("Player not found in database");
+                        if($sessionDuration > 0){
+                            $sender->sendMessage("§l§8»§r §7It is §f$target's§7 first time on the server, onlinetime is yet to be saved");
+                            return;
+                        }
+                        $sender->sendMessage("§l§8»§r §7Player §f{$target} §7does not exist in database");
                         return;
                     }
                     $sender->sendMessage("  §l§8»§r §g§lOnline Time for §f{$target}§r§l§8 «");
@@ -102,18 +105,22 @@ class OnlineTimeCommand extends Command
                     $sender->sendMessage($specificUsage);
                     return;
                 }
-                $provider->getTimeBetween($target, $from, $to, function ($result, $sender, $target, $to, $from) {
-                    $toDate = date("D JS F Y", $to);
-                    $fromDate = date("D JS F Y", $from);
+                if(($targetPlayer = Server::getInstance()->getPlayerExact($target)) !== null){
+                    $target = $targetPlayer->getName();
+                }
+                $provider->getTimeBetween($target, $from, $to, function ($result) use($sender, $target, $to, $from) {
+                    $toDate = date("jS F Y", $to);
+                    $fromDate = date("jS F Y", $from);
                     if (($result["total_duration"] ?? null) === null) {
-                        $sender->sendMessage("§l§8»§r §f$target §chas no onlinetime between $fromDate to $toDate");
+                        $sender->sendMessage("§l§8»§r §7$target §chas no onlinetime between $fromDate to $toDate");
                         return;
                     }
                     $sender->sendMessage("  §l§8»§r §g§lOnline Time for §f{$target}§r§l§8 «");
                     $sender->sendMessage(self::LINE_SEPARATOR);
-                    $timeComponents = OnlineTime::getInstance()->calcTimeComponents($result);
-                    $sender->sendMessage(" §l§8»§r §gFrom §f$fromDate §gto §f$toDate");
-                    $sender->sendMessage(" §l§8»§r §f$timeComponents[0]§7hrs §f$timeComponents[1]§7mins §7");
+                    $timeComponents = OnlineTime::getInstance()->calcTimeComponents($result["total_duration"]);
+                    $sender->sendMessage(" §l§8»§r §gFrom: §f$fromDate");
+                    $sender->sendMessage(" §l§8»§r §gTo: §f$toDate");
+                    $sender->sendMessage(" §l§8»§r §gTime: §f$timeComponents[0]§7hrs §f$timeComponents[1]§7mins §7");
                     $sender->sendMessage(self::LINE_SEPARATOR);
                 });
             }

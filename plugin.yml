@@ -7,5 +7,7 @@ api: 5.0.0
 permissions:
   onlinetime.command:
     default: true
+  onlinetime.admin:
+    default: op
 ...
 

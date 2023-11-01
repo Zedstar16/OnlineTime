@@ -17,6 +17,7 @@ class LeaderboardManager
         $this->entities = [];
     }
 
+
     public function initialiseEntities(): void {
         foreach (Loader::getInstance()->getLeaderboardCfg() as $lb) {
             $this->spawnLeaderboard($lb);
@@ -27,12 +28,13 @@ class LeaderboardManager
         foreach ($this->entities as $entity) {
             if ($entity !== null && !$entity->isClosed()) {
                 $type = $entity->getType();
-                OnlineTime::getInstance()->getProvider()->getTopTimes($type, function ($result) use ($type, $entity) {
-                    $lines[] = "§g§lTop Online Times " . (($args[1] ?? null) !== null ? "§7(§f{$type}§7) " : "") . "§fLeaderboard§r";
+                $lookbackPeriod = $type === "all" ? -1 : (int)$type;
+                OnlineTime::getInstance()->getProvider()->getTopTimes($lookbackPeriod, function ($result) use ($type, $entity) {
+                    $lines[] = "§g§lTop Online Times " . (($type !== "all") ? "§7(§f{$type}d§7) " : "") . "§fLeaderboard§r";
                     foreach ($result as $index => $playerOt) {
                         $position = $index + 1;
                         $timeComponents = OnlineTime::getInstance()->calcTimeComponents($playerOt["total_duration"]);
-                        $lines[] = "§7$position. §g$playerOt[username] §f$timeComponents[0]§8hrs §f$timeComponents[1]§8mins §7";
+                        $lines[] = "§7$position. §g$playerOt[username] §f$timeComponents[0]§7hrs §f$timeComponents[1]§7mins §7";
                     }
                     $entity?->setNameTag(implode("\n", $lines));
                 });
@@ -40,13 +42,20 @@ class LeaderboardManager
         }
     }
 
-    public function removeEntity(string $key): void{
-        if(isset($this->entities[$key])){
+    public function removeEntity(string $key): void {
+        if (isset($this->entities[$key])) {
+            $entity = $this->entities[$key];
+            if(!$entity->isClosed() && !$entity->isFlaggedForDespawn()){
+                $entity->flagForDespawn();
+            }
             unset($this->entities[$key]);
         }
     }
 
     public function spawnLeaderboard(array $cfg): void {
+        if (isset($this->entities[serialize($cfg)])) {
+            return;
+        }
         $position = new Position($cfg["x"], $cfg["y"], $cfg["z"], Server::getInstance()->getWorldManager()->getWorldByName($cfg["world"]));
         if ($position->world === null) {
             return;

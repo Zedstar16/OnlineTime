@@ -46,7 +46,9 @@ class LeaderboardEntity extends Zombie
             if($this->currentRotationIndex === count($this->rotationPeriods)){
                 $this->currentRotationIndex = 0;
             }
-            return $this->rotationPeriods[$this->currentRotationIndex];
+            $index = $this->currentRotationIndex;
+            $this->currentRotationIndex++;
+            return $this->rotationPeriods[$index];
         }
         return $this->type;
     }
@@ -57,7 +59,7 @@ class LeaderboardEntity extends Zombie
 
     public function setNameTag(string $name): void {
         parent::setNameTag($name);
-        $this->sendData($this->getWorld()->getPlayers());
+       // $this->sendData($this->getWorld()->getPlayers());
     }
 
 }

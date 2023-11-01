@@ -1,3 +1,10 @@
+# how long in seconds to wait for a player being inactive before considering them afk, and not counting their onlinetime
+inactivity-timeout: 60
+
+# interval in seconds to update/refresh leaderboards
+# this is also the interval that any "rotating" leaderboards will switch to the next value in their sequence
+leaderboard-update-interval: 30
+
 database:
   # choose either "sqlite3" or "mysql", if using mysql please fill out all the credentials
   provider: "sqlite3"

@@ -59,6 +59,9 @@ abstract class ProviderInterface
     }
 
     public function getTopTimes(int $lookbackPeriod, callable $callable): void {
+        if($lookbackPeriod !== -1){
+            $lookbackPeriod = time() - (86400 * $lookbackPeriod);
+        }
         $query =
             "
             SELECT XuidRelation.username, SUM(PlayerSessions.session_duration) AS total_duration
