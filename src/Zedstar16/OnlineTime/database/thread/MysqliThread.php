@@ -77,8 +77,12 @@ class MysqliThread extends DatabaseThread
                     $this->inUse = 1;
                     $queue = igbinary_unserialize($queue);
                     if (is_array($queue) && !empty($queue)) {
-                        if (!$con->ping()) {
-                            $con->close();
+                        try {
+                            if (!$con->ping()) {
+                                $con->close();
+                                $con = $this->attemptConnection(true);
+                            }
+                        }catch (Throwable $exception){
                             $con = $this->attemptConnection(true);
                         }
                         foreach ($queue as $input) {
