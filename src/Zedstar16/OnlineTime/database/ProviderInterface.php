@@ -14,23 +14,6 @@ abstract class ProviderInterface
         DatabaseThreadHandler::add("INSERT INTO PlayerSessions VALUES('$xuid', '$startTime', '$sessionDuration')");
     }
 
-    /**
-     * Registers player if they do not exist in db and updates username if changed
-     */
-    public function register(string $xuid, string $username): void {
-        $username = strtolower($username);
-        DatabaseThreadHandler::add("SELECT username from XuidRelation where xuid = '$xuid'", function ($result) use ($xuid, $username) {
-            if (($result["username"] ?? null) === null) {
-                DatabaseThreadHandler::add("INSERT INTO XuidRelation VALUES('$xuid', '$username')");
-                return;
-            }
-            if ($result["username"] !== $username) {
-                DatabaseThreadHandler::add("UPDATE XuidRelation SET username = '$username' where xuid = '$xuid'");
-            }
-        });
-    }
-
-
     /** Get OT for last 7d, 30d and Overall */
     public function getRecentTime(string $username, callable $callable): void {
         $timestamp7d = time() - (86400 * 7);
