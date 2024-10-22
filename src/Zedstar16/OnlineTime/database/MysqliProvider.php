@@ -24,5 +24,22 @@ class MysqliProvider extends ProviderInterface
         ");
     }
 
+    /**
+     * Registers player if they do not exist in db and updates username if changed
+     */
+    public function register(string $xuid, string $username): void {
+        $username = strtolower($username);
+        DatabaseThreadHandler::add("SELECT username from XuidRelation where xuid = '$xuid'", function ($result) use ($xuid, $username) {
+            if ((($result["username"] ?? null) === null) || $result["username"] !== $username) {
+                $sql = <<<SQL
+                    INSERT INTO XuidRelation (xuid, username) 
+                    VALUES ('$xuid', '$username') 
+                    ON DUPLICATE KEY UPDATE username = VALUES(username);
+                SQL;
+                DatabaseThreadHandler::add($sql);
+            }
+        });
+    }
+
 
 }
