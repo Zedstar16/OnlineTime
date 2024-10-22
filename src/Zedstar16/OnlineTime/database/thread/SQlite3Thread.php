@@ -46,21 +46,26 @@ class SQlite3Thread extends DatabaseThread
                             $queryResult = null;
                             $queryType = $input["queryType"];
                             $query = $input["query"];
-                            if ($queryType === self::TYPE_EXEC) {
-                                $con->exec($query);
-                            } else {
-                                $queryResult = $con->query($query);
-                                if ($queryResult instanceof SQLite3Result) {
-                                    if ($queryType === self::TYPE_QUERY_ALL) {
-                                        $rows = [];
-                                        while ($row = $queryResult->fetchArray(SQLITE3_ASSOC)) {
-                                            $rows[] = $row;
+                            try {
+                                if ($queryType === self::TYPE_EXEC) {
+                                    $con->exec($query);
+                                } else {
+                                    $queryResult = $con->query($query);
+                                    if ($queryResult instanceof SQLite3Result) {
+                                        if ($queryType === self::TYPE_QUERY_ALL) {
+                                            $rows = [];
+                                            while ($row = $queryResult->fetchArray(SQLITE3_ASSOC)) {
+                                                $rows[] = $row;
+                                            }
+                                            $queryResult = $rows;
+                                        } else {
+                                            $queryResult = $queryResult->fetchArray(SQLITE3_ASSOC);
                                         }
-                                        $queryResult = $rows;
-                                    } else {
-                                        $queryResult = $queryResult->fetchArray(SQLITE3_ASSOC);
                                     }
                                 }
+                            }catch (Throwable $error){
+                                $this->logger->critical("Error while running query: $query");
+                                $this->logger->logException($error);
                             }
                             $result = json_encode([
                                 "requestID" => $input["requestID"],
