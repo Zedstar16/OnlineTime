@@ -30,9 +30,9 @@ class DatabaseThreadHandler
         } else {
             $sqlite_db_path = Loader::getInstance()->getDataFolder() . $dbInfo["db-name"];
             if(!file_exists($sqlite_db_path)){
-                Server::getInstance()->getLogger()->critical("Database type is set to SQlite3 and database file does not exist at: $sqlite_db_path");
-                Server::getInstance()->getPluginManager()->disablePlugin(Loader::getInstance());
-                return;
+                $db = new \SQLite3($sqlite_db_path);
+                $db->close();
+                Server::getInstance()->getLogger()->notice("Create SQLite3 database for OnlineTime at $sqlite_db_path");
             }
             self::$DBThreadPool->addWorker(new SQlite3Thread(0, self::$DBThreadPool->getSleeperEntry(), Loader::getInstance()->getDataFolder() . $dbInfo["db-name"], $logger));
         }
