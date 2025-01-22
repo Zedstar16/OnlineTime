@@ -35,7 +35,8 @@ class Loader extends PluginBase
         }, ["LeaderboardEntity"]);
         self::$leaderboardManager = new LeaderboardManager();
         $leaderboadConfigFilePath = $this->getDataFolder() . "leaderboards.yml";
-        $this->leaderboardConfig = yaml_parse_file($leaderboadConfigFilePath);
+        $ymlData = yaml_parse_file($leaderboadConfigFilePath);
+        $this->leaderboardConfig = is_array($ymlData) ? $ymlData : [];
         DatabaseThreadHandler::initialize();
         $ot = new OnlineTime();
         $this->getServer()->getPluginManager()->registerEvents(new EventListener($ot), $this);
