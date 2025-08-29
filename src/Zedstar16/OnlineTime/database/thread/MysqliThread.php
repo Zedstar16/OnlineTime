@@ -6,19 +6,26 @@ namespace Zedstar16\OnlineTime\database\thread;
 
 use mysqli;
 use mysqli_result;
+use mysqli_sql_exception;
 use pmmp\thread\ThreadSafeArray;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\log\ThreadSafeLogger;
 
 use Throwable;
+use Zedstar16\OnlineTime\database\thread\message\ThreadMessage;
+use Zedstar16\OnlineTime\database\thread\message\ThreadResponse;
 use function gc_collect_cycles;
 use function gc_enable;
 use function gc_mem_caches;
 use function igbinary_serialize;
 use function igbinary_unserialize;
 
-class MysqliThread extends DatabaseThread
-{
+class MysqliThread extends DatabaseThread {
+
+    const MYSQL_ERR_SERVER_GONE_AWAY = 2006;
+    const MYSQL_ERR_LOST_CONNECTION = 2013;
+
+    const MAX_RECONNECT_SLEEP = 120;
 
     private string $db_host, $db_username, $db_password, $db_schema;
     private int $reconnect_sleep_time = 1;
@@ -36,8 +43,8 @@ class MysqliThread extends DatabaseThread
         $this->logger = $logger;
     }
 
-    public function log(string $log) {
-        $this->logger->info("[THREAD #{$this->getDBThreadID()}] ".$log);
+    public function log(string $log): void {
+        $this->logger->info("[THREAD #{$this->getDBThreadID()}] " . $log);
     }
 
     public function attemptConnection($reconnect = false): ?mysqli {
@@ -52,9 +59,9 @@ class MysqliThread extends DatabaseThread
             }
             $error = $con === null || $con->connect_error;
             $this->log(!$error ? "$connectstr Success" : "$connectstr Failed with error: " . ($con?->connect_error ?? "Unable to make connection to DB, retrying in $this->reconnect_sleep_time secs..."));
-            if($error) {
+            if ($error) {
                 sleep($this->reconnect_sleep_time);
-                if($this->reconnect_sleep_time < 120) {
+                if ($this->reconnect_sleep_time < self::MAX_RECONNECT_SLEEP) {
                     $this->reconnect_sleep_time *= 2;
                 }
             }
@@ -68,56 +75,42 @@ class MysqliThread extends DatabaseThread
         $con = $this->attemptConnection();
         $notifier = $this->sleeperHandlerEntry->createNotifier();
         while ($this->running) {
-            if ($con->connect_error) {
-                $this->log("Connection to DB Failed with error: " . $con->connect_error);
-                $this->attemptConnection(true);
-            }
             while (($queue = $this->actionQueue->shift()) !== null) {
                 try {
                     $this->inUse = 1;
-                    $queue = igbinary_unserialize($queue);
-                    if (is_array($queue) && !empty($queue)) {
-                        if (!$con->ping()) {
-                            $con->close();
-                            $con = $this->attemptConnection(true);
-                        }
-                        foreach ($queue as $input) {
-                            $input = json_decode($input, true);
-                            $queryType = $input["queryType"];
-                            $query = $input["query"];
-                            $queryResult = null;
-                            $queryResult = $con->query($query);
-                            if ($queryResult instanceof mysqli_result) {
-                                if ($queryType === DatabaseThread::TYPE_QUERY_ALL) {
-                                    $rows = [];
-                                    while ($row = $queryResult->fetch_assoc()) {
-                                        $rows[] = $row;
-                                    }
-                                    $queryResult = $rows;
-                                } else {
-                                    $queryResult = $queryResult->fetch_assoc();
-                                }
-                            }
-                            if ($queryResult === false) {
-                                $this->log("Query Failed: $query");
-                            }
-                            $result = json_encode([
-                                "requestID" => $input["requestID"],
-                                "result" => $queryResult
-                            ]);
-                            $this->actionResults[] = igbinary_serialize($result);
-                        }
-                        $notifier->wakeupSleeper();
-                    } elseif ($queue === "garbage_collector") {
+                    /** @var ThreadMessage $message */
+                    $message = igbinary_unserialize($queue);
+                    if ($message->getQueryType() === ThreadMessage::TYPE_GC_COLLECT) {
                         gc_enable();
                         gc_collect_cycles();
                         gc_mem_caches();
+                        $this->inUse = 0;
+                        continue;
                     }
-                    $this->inUse = 0;
+                    $queryResult = $con->query($message->getQuery());
+                    if ($queryResult instanceof mysqli_result) {
+                        if ($message->getQueryType() === ThreadMessage::TYPE_QUERY_SINGLE) {
+                            $queryResult = $queryResult->fetch_assoc();
+                        } elseif ($message->getQueryType() === ThreadMessage::TYPE_QUERY_ALL) {
+                            $rows = [];
+                            while ($row = $queryResult->fetch_assoc()) {
+                                $rows[] = $row;
+                            }
+                            $queryResult = $rows;
+                        }
+                    }
+                    $response = new ThreadResponse($message->getRequestID(), $queryResult);
+                    $this->actionResults[] = igbinary_serialize($response);
+                    $notifier->wakeupSleeper();
                 } catch (Throwable $error) {
                     $this->logger->logException($error);
-                    $this->inUse = 0;
+                    if ($con->errno === self::MYSQL_ERR_SERVER_GONE_AWAY || $con->errno === self::MYSQL_ERR_LOST_CONNECTION) {
+                        $this->actionQueue[] = $queue;
+                        $con->close();
+                        $con = $this->attemptConnection(true);
+                    }
                 }
+                $this->inUse = 0;
             }
             $this->sleep();
         }
