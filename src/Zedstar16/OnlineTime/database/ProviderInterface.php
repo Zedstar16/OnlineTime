@@ -2,8 +2,8 @@
 
 namespace Zedstar16\OnlineTime\database;
 
-use Zedstar16\OnlineTime\database\thread\DatabaseThread;
 use Zedstar16\OnlineTime\database\thread\DatabaseThreadHandler;
+use Zedstar16\OnlineTime\database\thread\message\ThreadMessage;
 
 abstract class ProviderInterface
 {
@@ -57,7 +57,7 @@ abstract class ProviderInterface
             ORDER BY total_duration DESC
             LIMIT 10; 
         ";
-        DatabaseThreadHandler::add($query, $callable, DatabaseThread::TYPE_QUERY_ALL);
+        DatabaseThreadHandler::add($query, $callable, ThreadMessage::TYPE_QUERY_ALL);
     }
 
     public function reset(string $username, callable $callable): void {
