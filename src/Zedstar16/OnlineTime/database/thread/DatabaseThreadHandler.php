@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Zedstar16\OnlineTime\database\thread;
 
 use pocketmine\Server;
+use Zedstar16\OnlineTime\database\thread\message\ThreadMessage;
+use Zedstar16\OnlineTime\database\thread\message\ThreadResponse;
 use Zedstar16\OnlineTime\Loader;
 use Zedstar16\OnlineTime\tasks\ThreadGCCollectorTask;
 
@@ -41,24 +43,19 @@ class DatabaseThreadHandler
     }
 
 
-    public static function add($query, ?callable $callable = null, $queryType = DatabaseThread::TYPE_QUERY_SINGLE): void {
-        $requestID = mt_rand(0, 999999999);
+    public static function add($query, ?callable $callable = null, $queryType = ThreadMessage::TYPE_QUERY_SINGLE): void {
+        $message = new ThreadMessage($query, $queryType);
         if ($callable !== null) {
-            self::$callbacks[$requestID] = $callable;
+            self::$callbacks[$message->getRequestID()] = $callable;
         }
-        $input = json_encode([
-            "requestID" => $requestID,
-            "query" => $query,
-            "queryType" => $queryType
-        ]);
-        self::$DBThreadPool->getLeastBusyWorker()->queue($input);
+        self::$DBThreadPool->getLeastBusyWorker()->queue($message);
     }
 
-    public static function sendResult($result): void {
-        $result = json_decode($result, true);
-        $callback = self::$callbacks[$result["requestID"]] ?? null;
+    public static function sendResult(ThreadResponse $response): void {
+        $callback = self::$callbacks[$response->getRequestID()] ?? null;
         if ($callback !== null) {
-            $callback($result["result"]);
+            $callback($response->getResponse());
+            unset(self::$callbacks[$response->getRequestID()]);
         }
     }
 
