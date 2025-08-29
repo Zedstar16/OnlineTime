@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Zedstar16\OnlineTime\database\thread;
 
 use pmmp\thread\Thread as ThreadAlias;
+use pmmp\thread\ThreadSafeArray;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\log\ThreadSafeLogger;
 use pocketmine\thread\Thread;
-use pmmp\thread\ThreadSafeArray;
-
+use Zedstar16\OnlineTime\database\thread\message\ThreadMessage;
 use function igbinary_serialize;
 use function igbinary_unserialize;
 
@@ -69,9 +69,9 @@ abstract class DatabaseThread extends Thread
         });
     }
 
-    public function queue(string $query): void {
-        $this->synchronized(function () use ($query): void {
-            $this->actionQueue[] = igbinary_serialize([$query]);
+    public function queue(ThreadMessage $message): void {
+        $this->synchronized(function () use ($message): void {
+            $this->actionQueue[] = igbinary_serialize($message);
             ++$this->busy_score;
             $this->notifyOne();
         });
@@ -79,7 +79,7 @@ abstract class DatabaseThread extends Thread
 
     public function triggerGarbageCollector(): void {
         $this->synchronized(function (): void {
-            $this->actionQueue[] = igbinary_serialize("garbage_collector");
+            $this->actionQueue[] = igbinary_serialize(new ThreadMessage("", ThreadMessage::TYPE_GC_COLLECT));
             $this->notifyOne();
         });
     }
