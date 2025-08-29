@@ -1,6 +1,6 @@
 ---
 name: OnlineTime
-version: 2.0.0
+version: 2.1.0
 main: Zedstar16\OnlineTime\Loader
 api: 5.0.0
 
