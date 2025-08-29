@@ -10,14 +10,15 @@ use pocketmine\thread\log\ThreadSafeLogger;
 use SQLite3;
 use SQLite3Result;
 use Throwable;
+use Zedstar16\OnlineTime\database\thread\message\ThreadMessage;
+use Zedstar16\OnlineTime\database\thread\message\ThreadResponse;
 use function gc_collect_cycles;
 use function gc_enable;
 use function gc_mem_caches;
 use function igbinary_serialize;
 use function igbinary_unserialize;
 
-class SQlite3Thread extends DatabaseThread
-{
+class SQlite3Thread extends DatabaseThread {
 
     private string $db_path;
 
@@ -39,51 +40,41 @@ class SQlite3Thread extends DatabaseThread
             while (($queue = $this->actionQueue->shift()) !== null) {
                 try {
                     $this->inUse = 1;
-                    $queue = igbinary_unserialize($queue);
-                    if (is_array($queue) && !empty($queue)) {
-                        foreach ($queue as $input) {
-                            $input = json_decode($input, true);
-                            $queryResult = null;
-                            $queryType = $input["queryType"];
-                            $query = $input["query"];
-                            try {
-                                if ($queryType === self::TYPE_EXEC) {
-                                    $con->exec($query);
-                                } else {
-                                    $queryResult = $con->query($query);
-                                    if ($queryResult instanceof SQLite3Result) {
-                                        if ($queryType === self::TYPE_QUERY_ALL) {
-                                            $rows = [];
-                                            while ($row = $queryResult->fetchArray(SQLITE3_ASSOC)) {
-                                                $rows[] = $row;
-                                            }
-                                            $queryResult = $rows;
-                                        } else {
-                                            $queryResult = $queryResult->fetchArray(SQLITE3_ASSOC);
-                                        }
-                                    }
-                                }
-                            }catch (Throwable $error){
-                                $this->logger->critical("Error while running query: $query");
-                                $this->logger->logException($error);
-                            }
-                            $result = json_encode([
-                                "requestID" => $input["requestID"],
-                                "result" => $queryResult
-                            ]);
-                            $this->actionResults[] = igbinary_serialize($result);
-                        }
-                        $notifier->wakeupSleeper();
-                    } elseif ($queue === "garbage_collector") {
+                    /** @var ThreadMessage $message */
+                    $message = igbinary_unserialize($queue);
+                    if ($message->getQueryType() === ThreadMessage::TYPE_GC_COLLECT) {
                         gc_enable();
                         gc_collect_cycles();
                         gc_mem_caches();
+                        $this->inUse = 0;
+                        continue;
                     }
-                    $this->inUse = 0;
+                    $result = null;
+                    $query = $message->getQuery();
+                    $queryType = $message->getQueryType();
+                    if ($queryType === ThreadMessage::TYPE_EXEC) {
+                        $result = $con->exec($query);
+                    } else {
+                        $queryResult = $con->query($query);
+                        if ($queryResult instanceof SQLite3Result) {
+                            if ($queryType === ThreadMessage::TYPE_QUERY_SINGLE) {
+                                $result = $queryResult->fetchArray(SQLITE3_ASSOC);
+                            } elseif ($queryType === ThreadMessage::TYPE_QUERY_ALL) {
+                                $rows = [];
+                                while ($row = $queryResult->fetchArray(SQLITE3_ASSOC)) {
+                                    $rows[] = $row;
+                                }
+                                $result = $rows;
+                            }
+                        }
+                    }
+                    $response = new ThreadResponse($message->getRequestID(), $result);
+                    $this->actionResults[] = igbinary_serialize($response);
+                    $notifier->wakeupSleeper();
                 } catch (Throwable $error) {
                     $this->logger->logException($error);
-                    $this->inUse = 0;
                 }
+                $this->inUse = 0;
             }
             $this->sleep();
         }
