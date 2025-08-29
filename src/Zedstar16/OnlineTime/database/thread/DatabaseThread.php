@@ -29,10 +29,6 @@ abstract class DatabaseThread extends Thread
 
     protected int $threadID;
 
-    public const TYPE_QUERY_SINGLE = 0;
-    public const TYPE_QUERY_ALL = 1;
-    public const TYPE_EXEC = 2;
-
     public function __construct(int $threadID, SleeperHandlerEntry $sleeperHandlerEntry, ThreadSafeLogger $logger) {
         $this->threadID = $threadID;
         $this->actionQueue = new ThreadSafeArray();
