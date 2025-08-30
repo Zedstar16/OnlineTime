@@ -1,8 +1,0 @@
---- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/Zedstar16/OnlineTime
-branches:
-- master
-projects:
-  OnlineTime:
-    path: ""
-    icon: "icon.png"
-...
